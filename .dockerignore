@@ -1,0 +1,10 @@
+node_modules       # never copy this — reinstalled inside container
+dist               # compiled output — rebuilt inside container
+.env               # never copy secrets into image
+.env.local
+.git               # git history not needed
+.gitignore
+README.md
+Dockerfile*        # no need to include dockerfiles inside image
+*.log              # log files
+coverage           # test coverage reports
