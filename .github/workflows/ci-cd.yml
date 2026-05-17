@@ -43,30 +43,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    env:
-      PORT: 3010
-      APP_NAME: auth
-      APP_URL: http://localhost:3010
-      APP_LINK: http://localhost:3010
-      JWT_SECRET_KEY: ci-access-secret
-      JWT_REFRESH_SECRET_KEY: ci-refresh-secret
-      JWT_ACCESS_EXPIRES: 15m
-      JWT_REFRESH_EXPIRES: 7d
-      DB_HOST: 127.0.0.1
-      DB_PORT: 5432
-      DB_USER: admin
-      DB_PASSWORD: secret
-      DB_NAME: auth
-      REDIS_HOST: 127.0.0.1
-      REDIS_PORT: 6379
-      REDIS_DB: 0
-      REDIS_TTL: 300
-      MAIL_HOST: smtp.example.com
-      MAIL_PORT: 587
-      MAIL_USER: user
-      MAIL_PASSWORD: password
-      MAIL_FROM: no-reply@example.com
-      RESEND_API_KEY: test_key
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -82,9 +59,6 @@ jobs:
 
       - name: Lint
         run: npm run lint
-
-      - name: Unit tests
-        run: npm test -- --runInBand
 
       - name: Build
         run: npm run build

@@ -219,3 +219,11 @@ Service starts on http://localhost:3010 by default.
 
 - Swagger UI: http://localhost:3010/api
 - Sample app endpoint: GET /v1/
+
+## 11. Production Hardening Checklist
+
+- Add structured logging and request correlation IDs.
+- Add metrics and tracing (for example Prometheus and OpenTelemetry).
+- Ensure SMTP/Resend failover and delivery observability.
+- Add Redis/Postgres backup and recovery procedures.
+- Add CI pipeline gates for lint, test, and security scans.

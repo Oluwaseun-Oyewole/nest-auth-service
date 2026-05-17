@@ -9,15 +9,13 @@ services:
     env_file:
       - .env
     volumes:
-      # Mount source for hot reload
       - .:/app
-      # Preserve the container's node_modules (don't overwrite with host)
       - /app/node_modules
     depends_on:
       postgres:
-        condition: service_healthy # ← wait until Postgres is actually ready
+        condition: service_healthy
       redis:
-        condition: service_healthy # ← wait until Redis is actually ready
+        condition: service_healthy
     networks:
       - auth
     restart: unless-stopped # ← retry if it crashes on boot
