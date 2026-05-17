@@ -2,11 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
-import * as crypto from 'crypto';
 import { Request } from 'express';
+import * as crypto from 'node:crypto';
 import * as requestIp from 'request-ip';
 import { MailServiceService } from 'src/integration-services/mail-service/mail-service.service';
-import { SessionsService } from 'src/sessions/sessions.service';
+import { SessionsService } from 'src/psql-sessions/sessions.service';
+import { TOKEN_TYPES } from 'src/psql-tokens/entity';
+import { UserTokensService } from 'src/psql-tokens/user-tokens.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -18,8 +20,6 @@ import {
   generateToken,
   hashToken,
 } from 'src/shared/utils/index.utils';
-import { TOKEN_TYPES } from 'src/user-tokens/entity';
-import { UserTokensService } from 'src/user-tokens/user-tokens.service';
 import {
   CreateUserDto,
   LoginDto,
@@ -84,12 +84,9 @@ export class AuthService {
       id: user.id,
     });
 
-    const decode = (await this.jwtService.decode(
+    const decode = await this.jwtService.decode(
       accessAndRefreshTokens.accessToken,
-    )) as {
-      jti: string;
-    };
-    console.log('decoded ', decode);
+    );
     await this.userService.updateLoginTimestamp(user.id);
 
     user.password = undefined;
@@ -127,12 +124,6 @@ export class AuthService {
     });
 
     await this.userTokensService.markTokenAsUsed(input.token);
-
-    // const accessAndRefreshTokens = await this.generateTokens({
-    //   id: user.id,
-    // });
-
-    // return { ...accessAndRefreshTokens };
   }
 
   async forgotPassword(email: string) {
@@ -260,11 +251,9 @@ export class AuthService {
       id: decoded.sub.id,
     });
 
-    const newDecoded = (await this.jwtService.decode(
+    const newDecoded = await this.jwtService.decode(
       accessAndRefreshTokens.accessToken,
-    )) as {
-      jti: string;
-    };
+    );
 
     await this.sessionsService.deleteSessionByJti(decoded.jti);
 

@@ -4,15 +4,15 @@ import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { Request } from 'express';
 import { MailServiceService } from 'src/integration-services/mail-service/mail-service.service';
-import { OtpService } from 'src/otp/otp.service';
+import { OtpService } from 'src/redis-otp/otp.service';
 import { RedisSessionsService } from 'src/redis-sessions/redis-sessions.service';
+import { TokenService } from 'src/redis-token/token.service';
 import {
   BadRequestException,
   ForbiddenException,
   InvalidCredentialsException,
   ResourceNotFoundException,
 } from 'src/shared/exceptions/domain.exceptions';
-import { TokenService } from 'src/token/token.service';
 import {
   CreateUserDto,
   ForgotPasswordDto,

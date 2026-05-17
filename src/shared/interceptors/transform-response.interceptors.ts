@@ -23,7 +23,7 @@ export class TransformResponseInterceptor<T> implements NestInterceptor<
 
     return next.handle().pipe(
       map((result) => {
-        if (result && result.success !== undefined) return result;
+        if (result?.success !== undefined) return result;
 
         return {
           success: true,

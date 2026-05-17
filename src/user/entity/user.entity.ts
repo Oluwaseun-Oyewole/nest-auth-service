@@ -1,6 +1,6 @@
 import { Exclude } from 'class-transformer';
-import { UserSession } from 'src/sessions/entity/session.entity';
-import { VerificationToken } from 'src/user-tokens/entity';
+import { UserSession } from 'src/psql-sessions/entity/session.entity';
+import { VerificationToken } from 'src/psql-tokens/entity';
 import {
   Column,
   CreateDateColumn,

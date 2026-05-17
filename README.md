@@ -219,12 +219,3 @@ Service starts on http://localhost:3010 by default.
 
 - Swagger UI: http://localhost:3010/api
 - Sample app endpoint: GET /v1/
-
-## 9. Build, Test, and Quality
-
-### 9.1 Build
-
-```bash
-npm run build
-npm run start:prod
-```

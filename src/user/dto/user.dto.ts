@@ -7,7 +7,7 @@ import {
   Length,
   MinLength,
 } from 'class-validator';
-import { TOKEN_TYPES } from 'src/user-tokens/entity/user-token.entity';
+import { TOKEN_TYPES } from 'src/psql-tokens/entity/user-token.entity';
 import { User } from '../entity';
 
 export class CreateUserDto {

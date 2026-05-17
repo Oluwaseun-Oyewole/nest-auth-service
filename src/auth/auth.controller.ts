@@ -57,7 +57,7 @@ export class AuthController {
   ) {}
 
   @Public()
-  @Post('register-with-redis')
+  @Post('register-redis')
   async registerWithRedis(@Body() data: CreateUserDto) {
     const resp = await this.authWithRedisService.register(data);
     return ResponseBuilder.created(
@@ -67,21 +67,21 @@ export class AuthController {
   }
 
   @Public()
-  @Post('login-with-redis')
+  @Post('login-redis')
   async loginWithRedis(@Body() data: LoginDto, @Req() req: Request) {
     const resp = await this.authWithRedisService.login(data, req);
     return ResponseBuilder.success(resp, 'Login successful');
   }
 
   @Public()
-  @Post('verify-with-redis')
+  @Post('verify-redis')
   async verifyWithRedis(@Body() data: VerifyOtpWithRedisDto) {
     const resp = await this.authWithRedisService.verify(data);
     return ResponseBuilder.created(resp, 'User verified successfully.');
   }
 
   @Public()
-  @Post('resend-otp-with-redis')
+  @Post('resend-otp-redis')
   async resendOtpWithRedis(@Body() data: ResendVerificationEmailDto) {
     const user = await this.authWithRedisService.resendOtp(data);
     return ResponseBuilder.created(
@@ -91,7 +91,7 @@ export class AuthController {
   }
 
   @Public()
-  @Post('forgot-password-with-redis')
+  @Post('forgot-password-redis')
   async forgotPasswordOtpWithRedis(@Body() data: ForgotPasswordDto) {
     const resp = await this.authWithRedisService.forgotPassword(data);
     return ResponseBuilder.created(
@@ -101,13 +101,13 @@ export class AuthController {
   }
 
   @Public()
-  @Post('reset-password-with-redis')
+  @Post('reset-password-redis')
   async resetPasswordOtpWithRedis(@Body() data: ResetPasswordWithRedisDto) {
     const resp = await this.authWithRedisService.resetPassword(data);
     return ResponseBuilder.created(resp, 'Password reset successfully.');
   }
 
-  @Post('logout-with-redis')
+  @Post('logout-redis')
   async logoutWithRedis(
     @CurrentUser() user: { sub: string; sessionId: string; family: string },
   ) {
@@ -119,7 +119,7 @@ export class AuthController {
     return ResponseBuilder.success(null, 'Logged out successfully.');
   }
 
-  @Post('logout-all-with-redis')
+  @Post('logout-all-redis')
   async logoutAllWithRedis(@CurrentUser() user: { sub: string }) {
     await this.authWithRedisService.logoutAllDevices(user.sub);
     return ResponseBuilder.success(
@@ -128,7 +128,7 @@ export class AuthController {
     );
   }
 
-  @Post('refresh-token-with-redis')
+  @Post('refresh-token-redis')
   @UseGuards(JWTRefreshTokenGuard)
   async refreshTokensWithRedis(
     @GetToken() refreshToken: string,

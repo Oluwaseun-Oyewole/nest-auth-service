@@ -11,7 +11,7 @@ import { EntityNotFoundError, QueryFailedError } from 'typeorm';
 import { ApiResponse } from '../interfaces/api-response.interface';
 import { AppException } from './base.exceptions';
 
-@Catch() // catches ALL exceptions — no argument means catch everything
+@Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
@@ -22,7 +22,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const errorResponse = this.handleException(exception, request);
 
-    // Log the error with full context
     this.logger.error(
       `${request.method} ${request.url} ${errorResponse.statusCode}`,
       exception instanceof Error ? exception.stack : String(exception),

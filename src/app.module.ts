@@ -9,23 +9,23 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { IntegrationServicesModule } from './integration-services/integration-services.module';
+import { SessionsModule } from './psql-sessions/sessions.module';
+import { UserTokensModule } from './psql-tokens/user-tokens.module';
 import { RedisModule } from './redis/redis.module';
-import { SessionsModule } from './sessions/sessions.module';
-import { appConfig } from './shared/config';
-import { UserTokensModule } from './user-tokens/user-tokens.module';
 import { UserModule } from './user/user.module';
 
 import { APP_GUARD } from '@nestjs/core';
-import { OtpModule } from './otp/otp.module';
+import { HealthModule } from './health/health.module';
+import { OtpModule } from './redis-otp/otp.module';
 import { RedisSessionsModule } from './redis-sessions/redis-sessions.module';
-import { TokenModule } from './token/token.module';
+import { TokenModule } from './redis-token/token.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],
-      load: [appConfig, redisConfig],
+      load: [redisConfig],
     }),
 
     ThrottlerModule.forRoot({
@@ -64,6 +64,7 @@ import { TokenModule } from './token/token.module';
     OtpModule,
     RedisSessionsModule,
     TokenModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [

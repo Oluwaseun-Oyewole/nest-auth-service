@@ -1,0 +1,43 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: auth_app_container
+    ports:
+      - '3010:3010'
+
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - auth
+
+  postgres:
+    image: postgres:16
+    container_name: pg_container
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: auth
+    ports:
+      - '5432:5432'
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - auth
+
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    ports:
+      - '6379:6379'
+    networks:
+      - auth
+
+  networks:
+  auth:
+    driver: bridge
+
+volumes:
+  pg_data:
