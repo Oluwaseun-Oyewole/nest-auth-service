@@ -84,12 +84,12 @@ flowchart LR
 
 ### 3.2 Redis-Backed Flow
 
-- register-with-redis: Creates user, generates OTP + verify token in Redis.
-- login-with-redis: Creates Redis session, issues family-scoped refresh token.
-- verify-with-redis: Validates OTP from Redis and activates account.
-- forgot/reset-password-with-redis: Uses Redis OTP and updates password.
-- refresh-token-with-redis: Verifies family record, rotates pair, revokes family/session.
-- logout-with-redis/logout-all-with-redis: Revokes session(s) and token family/families.
+- register-redis: Creates user, generates OTP + verify token in Redis.
+- login-redis: Creates Redis session, issues family-scoped refresh token.
+- verify-redis: Validates OTP from Redis and activates account.
+- forgot/reset-password-redis: Uses Redis OTP and updates password.
+- refresh-token-redis: Verifies family record, rotates pair, revokes family/session.
+- logout-redis/logout-all-redis: Revokes session(s) and token family/families.
 
 ## 4. API Surface
 
@@ -103,15 +103,15 @@ flowchart LR
 
 Redis-backed:
 
-- POST /v1/auth/register-with-redis
-- POST /v1/auth/login-with-redis
-- POST /v1/auth/verify-with-redis
-- POST /v1/auth/resend-otp-with-redis
-- POST /v1/auth/forgot-password-with-redis
-- POST /v1/auth/reset-password-with-redis
-- POST /v1/auth/refresh-token-with-redis
-- POST /v1/auth/logout-with-redis
-- POST /v1/auth/logout-all-with-redis
+- POST /v1/auth/register-redis
+- POST /v1/auth/login-redis
+- POST /v1/auth/verify-redis
+- POST /v1/auth/resend-otp-redis
+- POST /v1/auth/forgot-password-redis
+- POST /v1/auth/reset-password-redis
+- POST /v1/auth/refresh-token-redis
+- POST /v1/auth/logout-redis
+- POST /v1/auth/logout-all-redis
 
 DB-backed:
 
@@ -159,7 +159,6 @@ Default TTLs:
 - Email verification token: 10 minutes.
 - Session: 7 days.
 - Refresh token record: 7 days.
-- OTP rate-limit key: 1 hour.
 
 ## 6. Security and Platform Controls
 
@@ -180,11 +179,6 @@ Global throttler profiles:
 
 Throttler state is persisted in Redis.
 
-### 6.3 Error and Response Contracts
-
-- GlobalExceptionFilter normalizes errors into a typed API shape.
-- TransformResponseInterceptor and ResponseBuilder enforce consistent success payloads.
-
 ## 8. Local Development
 
 ### 8.1 Prerequisites
@@ -195,25 +189,15 @@ Throttler state is persisted in Redis.
 
 ### 8.2 Start Infrastructure Dependencies
 
-```bash
+````bash
 docker compose up -d
-```
-
-This starts:
-
-- PostgreSQL: localhost:5432
-- pgAdmin: http://localhost:8080
-- Redis: localhost:6379
-- RedisInsight: http://localhost:5540
 
 ### 8.3 Install and Run API
 
 ```bash
 npm install
 npm run start:dev
-```
-
-Service starts on http://localhost:3010 by default.
+````
 
 ### 8.4 Swagger and Health Check
 
@@ -222,8 +206,6 @@ Service starts on http://localhost:3010 by default.
 
 ## 11. Production Hardening Checklist
 
-- Add structured logging and request correlation IDs.
-- Add metrics and tracing (for example Prometheus and OpenTelemetry).
+<!-- - Add structured logging and request correlation IDs.
 - Ensure SMTP/Resend failover and delivery observability.
-- Add Redis/Postgres backup and recovery procedures.
-- Add CI pipeline gates for lint, test, and security scans.
+- Add CI pipeline gates for lint, test, and security scans. -->

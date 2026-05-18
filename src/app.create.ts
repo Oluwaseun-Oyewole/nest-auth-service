@@ -10,7 +10,9 @@ import {
   SwaggerCustomOptions,
   SwaggerModule,
 } from '@nestjs/swagger';
+import { AuthLogger } from './logger/logger.service';
 import { GlobalExceptionFilter } from './shared/exceptions/global.exceptions';
+import { LoggingInterceptor } from './shared/interceptors/log.interceptors';
 import { TransformResponseInterceptor } from './shared/interceptors/transform-response.interceptors';
 
 export async function appCreate(app: INestApplication) {
@@ -18,7 +20,6 @@ export async function appCreate(app: INestApplication) {
   const allowedOrigins =
     configService.get<string>('ALLOWED_ORIGINS')?.split(',') || [];
 
-  console.log('Allowed Origins:', allowedOrigins);
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
@@ -49,7 +50,6 @@ export async function appCreate(app: INestApplication) {
     .setVersion('1.0.0')
     .addTag('Authentication', 'Authentication and account access endpoints')
     .addServer(`http://localhost:3010`, 'Local')
-    .addServer('https://api.example.com', 'Production')
     .addBearerAuth(
       {
         type: 'http',
@@ -77,6 +77,9 @@ export async function appCreate(app: INestApplication) {
   const document = SwaggerModule.createDocument(app, config, {
     extraModels: [],
   });
+
+  app.useLogger(new AuthLogger());
+  app.useGlobalInterceptors(new LoggingInterceptor(new AuthLogger()));
 
   SwaggerModule.setup('api', app, document, customOptions);
   app.enableCors({

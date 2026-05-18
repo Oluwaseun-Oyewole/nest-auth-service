@@ -4,12 +4,18 @@ import { appCreate } from './app.create';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+
   const config = app.get(ConfigService);
+  const host = '0.0.0.0';
+  const port = config.get<number>('PORT') || 3010;
+
   appCreate(app);
-  await app.listen(config.get('PORT'), () => {
+  await app.listen(port, host, () => {
     console.log(
-      `${config.get('APP_NAME')} is running on http://localhost:${config.get('PORT')}`,
+      `${config.get('APP_NAME')} is running on http://${host}:${port}`,
     );
   });
 }

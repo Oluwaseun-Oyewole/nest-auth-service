@@ -6,27 +6,31 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 config();
 const configService = new ConfigService();
+console.log('dirname', __dirname);
 
 export const databaseConfigOptions: DataSourceOptions = {
   type: 'postgres',
-  host: configService.get<string>('DB_HOST'),
-  port: Number.parseInt(configService.get<string>('DB_PORT'), 10),
-  username: configService.get<string>('DB_USER'),
-  password: configService.get<string>('DB_PASSWORD'),
-  database: configService.get<string>('DB_NAME'),
+  // host: configService.get<string>('DB_HOST'),
+  // port: Number.parseInt(configService.get<string>('DB_PORT'), 10),
+  // username: configService.get<string>('DB_USER'),
+  // password: configService.get<string>('DB_PASSWORD'),
+  // database: configService.get<string>('DB_NAME'),
+  url: configService.get<string>('DB_URL'),
+
   synchronize: !isProduction,
 
   entities: [
     isProduction
       ? 'dist/**/*.entity.js'
-      : `__dirname + '/../**/*.entity{.ts,.js}'`,
+      : `${__dirname}/../**/*.entity{.ts,.js}`,
   ],
 
   migrations: [
-    isProduction ? 'dist/migrations/*.js' : 'dist/db/migrations/*{.ts,.js}',
+    isProduction
+      ? 'dist/migrations/*.js'
+      : `${__dirname}/../migrations/*{.ts,.js}`,
   ],
 
-  ssl: isProduction ? { rejectUnauthorized: true } : false,
   migrationsRun: isProduction,
 
   extra: {

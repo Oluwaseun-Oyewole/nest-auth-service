@@ -27,6 +27,7 @@ import {
   VerifyOtpDto,
 } from 'src/user/dto/user.dto';
 import { UsersService } from 'src/user/user.service';
+import { AuthLogger } from './../logger/logger.service';
 import { ResendVerificationEmailDto } from './../user/dto/user.dto';
 import { JWTPayload } from './auth.interface';
 
@@ -39,6 +40,7 @@ export class AuthService {
     private readonly userTokensService: UserTokensService,
     private readonly configService: ConfigService,
     private readonly sessionsService: SessionsService,
+    private readonly authLogger: AuthLogger,
   ) {}
 
   async register(data: CreateUserDto) {
@@ -68,6 +70,7 @@ export class AuthService {
   }
 
   async login(data: LoginDto, request: Request) {
+    this.authLogger.loginAttempt(data.email);
     const user = await this.userService.findUserWithPassword(data.email);
     if (!user) throw new ResourceNotFoundException('User', data.email);
 
@@ -97,6 +100,9 @@ export class AuthService {
       deviceInfo: request.headers['user-agent'],
       ipAddress: requestIp.getClientIp(request),
     });
+
+    this.authLogger.loginSuccess(data.email);
+    this.authLogger.tokenIssued(data.email);
     return { ...accessAndRefreshTokens, user };
   }
 

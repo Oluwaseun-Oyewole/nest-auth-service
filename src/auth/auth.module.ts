@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { MailServiceModule } from 'src/integration-services/mail-service/mail-service.module';
+import { LoggerModule } from 'src/logger/logger.module';
 import { SessionsModule } from 'src/psql-sessions/sessions.module';
 import { UserTokensModule } from 'src/psql-tokens/user-tokens.module';
 import { OtpModule } from 'src/redis-otp/otp.module';
@@ -32,6 +33,7 @@ import { AccessJwtStrategy } from './strategies/jwt.strategy';
     OtpModule,
     RedisSessionsModule,
     TokenModule,
+    LoggerModule,
   ],
   controllers: [AuthController],
   providers: [
