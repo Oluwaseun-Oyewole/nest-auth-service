@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { VerificationToken } from './entity';
+import { VerificationToken } from './entity/user-token.entity';
 import { UserTokensService } from './user-tokens.service';
 
 @Module({

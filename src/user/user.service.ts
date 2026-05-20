@@ -7,7 +7,7 @@ import {
 import { hashPassword } from 'src/shared/utils/index.utils';
 import { Repository } from 'typeorm';
 import { CreateUserDto, LoginDto, UpdatePasswordDto } from './dto/user.dto';
-import { User } from './entity';
+import { User } from './entity/user.entity';
 
 @Injectable()
 export class UsersService {

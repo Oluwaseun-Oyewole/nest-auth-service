@@ -8,7 +8,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { TOKEN_TYPES } from 'src/psql-tokens/entity/user-token.entity';
-import { User } from '../entity';
+import { User } from '../entity/user.entity';
 
 export class CreateUserDto {
   @ApiProperty({

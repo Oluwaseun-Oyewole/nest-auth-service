@@ -7,7 +7,7 @@ import * as crypto from 'node:crypto';
 import * as requestIp from 'request-ip';
 import { MailServiceService } from 'src/integration-services/mail-service/mail-service.service';
 import { SessionsService } from 'src/psql-sessions/sessions.service';
-import { TOKEN_TYPES } from 'src/psql-tokens/entity';
+import { TOKEN_TYPES } from 'src/psql-tokens/entity/user-token.entity';
 import { UserTokensService } from 'src/psql-tokens/user-tokens.service';
 import {
   BadRequestException,

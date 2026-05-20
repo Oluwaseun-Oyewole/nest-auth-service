@@ -7,7 +7,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { TOKEN_TYPES } from '../entity';
+import { TOKEN_TYPES } from '../entity/user-token.entity';
 
 export class VerificationTokenDto {
   @ApiProperty()

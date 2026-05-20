@@ -22,7 +22,7 @@ services:
 
   postgres:
     image: postgres:16
-    container_name: pg_container
+    container_name: auth_pg_container
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secret
@@ -42,7 +42,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pgadmin_container
+    container_name: auth_pgadmin_container
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
@@ -56,7 +56,7 @@ services:
 
   redis:
     image: redis:latest
-    container_name: redis_container
+    container_name: auth_redis_container
     ports:
       - '6379:6379'
     networks:
@@ -70,7 +70,7 @@ services:
 
   redisinsight:
     image: redis/redisinsight:latest
-    container_name: redisinsight_container
+    container_name: auth_redisinsight_container
     ports:
       - '5540:5540'
     networks:

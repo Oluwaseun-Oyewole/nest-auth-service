@@ -14,7 +14,6 @@ export const databaseConfigOptions: DataSourceOptions = {
   username: configService.get<string>('DB_USER'),
   password: configService.get<string>('DB_PASSWORD'),
   database: configService.get<string>('DB_NAME'),
-  // url: configService.get<string>('DB_URL'),
 
   synchronize: !isProduction,
 
@@ -26,8 +25,8 @@ export const databaseConfigOptions: DataSourceOptions = {
 
   migrations: [
     isProduction
-      ? 'dist/migrations/*.js'
-      : `${__dirname}/../migrations/*{.ts,.js}`,
+      ? 'dist/migrations/migrations/*.js'
+      : `${__dirname}/../migrations/migrations/*{.ts,.js}`,
   ],
 
   migrationsRun: isProduction,

@@ -8,11 +8,11 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  // const host = '0.0.0.0' // docker port mapping;
+  const host = '0.0.0.0';
 
   const config = app.get(ConfigService);
   appCreate(app);
-  await app.listen(config.get('PORT'), () => {
+  await app.listen(config.get('PORT'), host, () => {
     console.log(
       `${config.get('APP_NAME')} is running on http://localhost:${config.get('PORT')}`,
     );

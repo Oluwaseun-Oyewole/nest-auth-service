@@ -6,7 +6,7 @@ import {
 } from 'src/shared/exceptions/domain.exceptions';
 import { Repository } from 'typeorm';
 import { VerificationTokenDto } from './dto/user-token.dto';
-import { VerificationToken } from './entity';
+import { VerificationToken } from './entity/user-token.entity';
 
 @Injectable()
 export class UserTokensService {

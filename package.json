@@ -18,10 +18,12 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "migration:generate": "typeorm-ts-node-commonjs migration:generate src/migrations/$npm_config_name -d src/config/typeorm.config.ts",
-    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/config/typeorm.config.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/typeorm.config.ts",
-    "migration:show": "typeorm-ts-node-commonjs migration:show -d src/config/typeorm.config.ts"
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "npm run typeorm -- migration:generate -d src/config/typeorm.config.ts src/migrations/migrations",
+    "migration:create": "npm run typeorm -- migration:create src/migrations/migrations",
+    "migration:run": "npm run typeorm -- migration:run -d src/config/typeorm.config.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/config/typeorm.config.ts",
+    "migration:show": "npm run typeorm -- migration:show -d src/config/typeorm.config.ts"
   },
   "dependencies": {
     "@keyv/redis": "^5.1.6",
