@@ -14,6 +14,7 @@ import { AuthLogger } from './logger/logger.service';
 import { GlobalExceptionFilter } from './shared/exceptions/global.exceptions';
 import { LoggingInterceptor } from './shared/interceptors/log.interceptors';
 import { TransformResponseInterceptor } from './shared/interceptors/transform-response.interceptors';
+import * as compression from 'compression';
 
 export async function appCreate(app: INestApplication) {
   const configService = app.get(ConfigService);
@@ -100,4 +101,6 @@ export async function appCreate(app: INestApplication) {
       'User-Agent',
     ],
   });
+
+  app.use(compression());
 }

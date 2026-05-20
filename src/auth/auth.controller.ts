@@ -19,8 +19,8 @@ import {
 import { Request } from 'express';
 import { Public } from 'src/shared/decorators/public-request.decorator';
 import { ApiPublicAuthRoute } from 'src/shared/decorators/swagger.decorator';
-import { GetToken } from 'src/shared/decorators/token.decorators';
-import { CurrentUser } from 'src/shared/decorators/user.decorators';
+import { GetToken } from 'src/shared/decorators/token.decorator';
+import { CurrentUser } from 'src/shared/decorators/user.decorator';
 import { APIValidationErrorResponse } from 'src/shared/dto/error-response.dto';
 import { ResponseBuilder } from 'src/shared/utils/api-response.builder';
 import {
