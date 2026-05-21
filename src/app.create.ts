@@ -1,6 +1,7 @@
 import {
   ClassSerializerInterceptor,
   INestApplication,
+  ValidationPipe,
   VersioningType,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -10,11 +11,11 @@ import {
   SwaggerCustomOptions,
   SwaggerModule,
 } from '@nestjs/swagger';
+import * as compression from 'compression';
 import { AuthLogger } from './logger/logger.service';
 import { GlobalExceptionFilter } from './shared/exceptions/global.exceptions';
 import { LoggingInterceptor } from './shared/interceptors/log.interceptors';
 import { TransformResponseInterceptor } from './shared/interceptors/transform-response.interceptors';
-import * as compression from 'compression';
 
 export async function appCreate(app: INestApplication) {
   const configService = app.get(ConfigService);
@@ -38,6 +39,14 @@ export async function appCreate(app: INestApplication) {
     },
     customCss: '.topbar { display: none }',
   };
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new TransformResponseInterceptor());
