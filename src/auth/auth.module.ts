@@ -11,6 +11,7 @@ import { RedisSessionsModule } from 'src/redis-sessions/redis-sessions.module';
 import { TokenModule } from 'src/redis-token/token.module';
 import { UserModule } from 'src/user/user.module';
 import { AuthController } from './auth.controller';
+import { RedisAuthController } from './auth.redis.controller';
 import { AuthWithRedisService } from './auth.redis.service';
 import { AuthService } from './auth.service';
 import { RefreshTokenStrategy } from './strategies/jwt-refresh.strategy';
@@ -35,7 +36,7 @@ import { AccessJwtStrategy } from './strategies/jwt.strategy';
     TokenModule,
     LoggerModule,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, RedisAuthController],
   providers: [
     AuthService,
     AuthWithRedisService,

@@ -30,11 +30,8 @@ import {
   LogoutAllDto,
   ResendVerificationEmailDto,
   ResetPasswordDto,
-  ResetPasswordWithRedisDto,
   VerifyOtpDto,
-  VerifyOtpWithRedisDto,
 } from 'src/user/dto/user.dto';
-import { AuthWithRedisService } from './auth.redis.service';
 import { AuthService } from './auth.service';
 import {
   LogoutResponseDto,
@@ -47,102 +44,12 @@ import {
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JWTRefreshTokenGuard } from './guards/jwt-refresh.guard';
 
-// @Public()
+// Standard auth flow without Redis caching - retains database persistence for OTPs and verification tokens
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly authWithRedisService: AuthWithRedisService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
-  @Public()
-  @Post('register-redis')
-  async registerWithRedis(@Body() data: CreateUserDto) {
-    const resp = await this.authWithRedisService.register(data);
-    return ResponseBuilder.created(
-      new RegisterResponseDto(resp),
-      'User registered successfully. Please check your email to verify your account.',
-    );
-  }
-
-  @Public()
-  @Post('login-redis')
-  async loginWithRedis(@Body() data: LoginDto, @Req() req: Request) {
-    const resp = await this.authWithRedisService.login(data, req);
-    return ResponseBuilder.success(resp, 'Login successful');
-  }
-
-  @Public()
-  @Post('verify-redis')
-  async verifyWithRedis(@Body() data: VerifyOtpWithRedisDto) {
-    const resp = await this.authWithRedisService.verify(data);
-    return ResponseBuilder.created(resp, 'User verified successfully.');
-  }
-
-  @Public()
-  @Post('resend-otp-redis')
-  async resendOtpWithRedis(@Body() data: ResendVerificationEmailDto) {
-    const user = await this.authWithRedisService.resendOtp(data);
-    return ResponseBuilder.created(
-      user,
-      'Verification OTP resent successfully. Please check your email.',
-    );
-  }
-
-  @Public()
-  @Post('forgot-password-redis')
-  async forgotPasswordOtpWithRedis(@Body() data: ForgotPasswordDto) {
-    const resp = await this.authWithRedisService.forgotPassword(data);
-    return ResponseBuilder.created(
-      resp,
-      'Verification OTP resent successfully. Please check your email.',
-    );
-  }
-
-  @Public()
-  @Post('reset-password-redis')
-  async resetPasswordOtpWithRedis(@Body() data: ResetPasswordWithRedisDto) {
-    const resp = await this.authWithRedisService.resetPassword(data);
-    return ResponseBuilder.created(resp, 'Password reset successfully.');
-  }
-
-  @Post('logout-redis')
-  async logoutWithRedis(
-    @CurrentUser() user: { sub: string; sessionId: string; family: string },
-  ) {
-    await this.authWithRedisService.logout(
-      user.sub,
-      user.sessionId,
-      user.family,
-    );
-    return ResponseBuilder.success(null, 'Logged out successfully.');
-  }
-
-  @Post('logout-all-redis')
-  async logoutAllWithRedis(@CurrentUser() user: { sub: string }) {
-    await this.authWithRedisService.logoutAllDevices(user.sub);
-    return ResponseBuilder.success(
-      null,
-      'Logged out from all devices successfully.',
-    );
-  }
-
-  @Post('refresh-token-redis')
-  @UseGuards(JWTRefreshTokenGuard)
-  async refreshTokensWithRedis(
-    @GetToken() refreshToken: string,
-    @CurrentUser() user: { family: string },
-  ) {
-    const accessAndRefreshTokens =
-      await this.authWithRedisService.refreshTokens(refreshToken, user.family);
-    return ResponseBuilder.success(
-      accessAndRefreshTokens,
-      'Tokens refreshed successfully.',
-    );
-  }
-
-  // Standard auth flow without Redis caching - retains database persistence for OTPs and verification tokens
   @ApiOperation({
     summary: 'Register a new account',
     description:

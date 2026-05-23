@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: auth_app_container
     ports:
-      - '3010:3010'
+      - '3011:3010'
     env_file:
       - .env
     volumes:

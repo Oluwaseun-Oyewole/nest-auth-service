@@ -111,5 +111,6 @@ export async function appCreate(app: INestApplication) {
     ],
   });
 
+  app.setGlobalPrefix('api');
   app.use(compression());
 }
