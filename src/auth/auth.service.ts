@@ -27,6 +27,7 @@ import {
   VerifyOtpDto,
 } from 'src/user/dto/user.dto';
 import { UsersService } from 'src/user/user.service';
+import { DataSource } from 'typeorm';
 import { AuthLogger } from './../logger/logger.service';
 import { ResendVerificationEmailDto } from './../user/dto/user.dto';
 import { JWTPayload } from './auth.interface';
@@ -41,21 +42,28 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly sessionsService: SessionsService,
     private readonly authLogger: AuthLogger,
+    private readonly dataSource: DataSource,
   ) {}
 
   async register(data: CreateUserDto) {
-    const user = await this.userService.createUser({ ...data });
-
     const emailVerificationToken = generateToken();
     const otp = generateOtp();
     const verificationLink = `${this.configService.get<string>('APP_URL')}/verify/?otp=${otp}&token=${emailVerificationToken}`;
 
-    await this.userTokensService.createVerificationToken({
-      userId: user.id,
-      token: emailVerificationToken,
-      otpCode: otp,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-      type: TOKEN_TYPES.EMAIL_VERIFICATION,
+    const result = await this.dataSource.transaction(async (manager) => {
+      const user = await this.userService.createUser({ ...data }, manager);
+
+      await this.userTokensService.createVerificationToken(
+        {
+          userId: user.id,
+          token: emailVerificationToken,
+          otpCode: otp,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+          type: TOKEN_TYPES.EMAIL_VERIFICATION,
+        },
+        manager,
+      );
+      return { token: emailVerificationToken, email: data.email };
     });
 
     await this.mailService.sendVerificationEmailWithResend({
@@ -66,7 +74,7 @@ export class AuthService {
       verificationLink,
     });
 
-    return { token: emailVerificationToken, email: data.email };
+    return result;
   }
 
   async login(data: LoginDto, request: Request) {

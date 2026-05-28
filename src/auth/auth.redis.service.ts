@@ -36,10 +36,10 @@ export class AuthWithRedisService {
   ) {}
 
   async register(data: CreateUserDto) {
-    await this.userService.createUser({ ...data });
     const { otp, verifyToken } = await this.otpService.generateRegistrationOtp(
       data.email,
     );
+    await this.userService.createUser({ ...data });
     const verificationLink = `${this.configService.get<string>('APP_URL')}/verify/?otp=${otp}&token=${verifyToken}`;
 
     await this.mailService.sendVerificationEmail({

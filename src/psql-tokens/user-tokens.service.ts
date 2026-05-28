@@ -4,8 +4,7 @@ import {
   ForbiddenException,
   TokenExpiredException,
 } from 'src/shared/exceptions/domain.exceptions';
-import { Repository } from 'typeorm';
-import { VerificationTokenDto } from './dto/user-token.dto';
+import { EntityManager, Repository } from 'typeorm';
 import { VerificationToken } from './entity/user-token.entity';
 
 @Injectable()
@@ -15,29 +14,29 @@ export class UserTokensService {
     private readonly VerificationTokenRepository: Repository<VerificationToken>,
   ) {}
 
-  async createVerificationToken({
-    userId,
-    token,
-    expiresAt,
-    type,
-    otpCode,
-  }: VerificationTokenDto) {
-    const tokenExists = await this.VerificationTokenRepository.findOne({
+  async createVerificationToken(
+    { userId, token, expiresAt, type, otpCode },
+    manager?: EntityManager,
+  ): Promise<VerificationToken> {
+    const repo = manager
+      ? manager.getRepository(VerificationToken)
+      : this.VerificationTokenRepository;
+    const tokenExists = await repo.findOne({
       where: { user: { id: userId } },
     });
 
     if (tokenExists) {
-      await this.VerificationTokenRepository.delete({ user: { id: userId } });
+      await repo.delete({ user: { id: userId } });
     }
 
-    const createUserToken = this.VerificationTokenRepository.create({
+    const createUserToken = repo.create({
       user: { id: userId },
       token,
       expiresAt,
       type,
       otpCode,
     });
-    await this.VerificationTokenRepository.save(createUserToken);
+    await repo.save(createUserToken);
     return createUserToken;
   }
   async checkVerificationTokenIsValid(token: string) {

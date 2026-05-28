@@ -1,210 +1,144 @@
 # Nest Auth Service
 
-Production-oriented authentication and account lifecycle service built with NestJS, PostgreSQL, and Redis.
+Authentication and account lifecycle API built with NestJS, PostgreSQL, Redis, and JWT.
 
-This service supports two authentication pipelines:
+## Overview
 
-- Database-backed token and session persistence.
-- Redis-backed OTP/session/token-family flow for faster revocation and low-latency verification.
+The service supports two auth modes running side-by-side:
 
-## 1. System Overview
+- DB-backed mode: stores sessions and verification tokens in PostgreSQL.
+- Redis-backed mode: stores OTPs, sessions, and refresh-token families in Redis.
 
-### 1.1 Responsibilities
+Core capabilities:
 
-- User registration and account verification (email OTP + tokenized link).
-- Login and JWT issuance (access + refresh tokens).
+- Register and verify account (OTP + tokenized link support).
+- Login and issue access/refresh JWTs.
 - Refresh token rotation.
-- Device/session logout and global logout.
-- Forgot/reset password workflows.
-- API versioning, Swagger docs, consistent response envelope, and global exception handling.
+- Logout current device or all devices.
+- Forgot/reset password.
+- API versioning, Swagger docs, health checks, global error formatting, and response wrapping.
 
-### 1.2 Runtime Architecture
+## Tech Stack
 
-```mermaid
-flowchart LR
-  C[Client Apps] --> A[NestJS Auth API]
-  A --> P[(PostgreSQL)]
-  A --> R[(Redis)]
-  A --> M[SMTP Provider]
-  A --> RS[Resend API]
+- Node.js 20+
+- NestJS 10
+- PostgreSQL 16 (TypeORM)
+- Redis
+- SMTP mailer + Resend client
+- Swagger
+- Docker Compose for local infrastructure
 
-  subgraph A1[Auth API Internal Modules]
-    AU[Auth Module]
-    US[User Module]
-    TS[Token Module]
-    OS[OTP Module]
-    SS[Sessions Module]
-    RSS[Redis Sessions Module]
-    MS[Mail Service Module]
-  end
-```
+## Runtime Routing
 
-### 1.3 Infrastructure Components
+The app uses both a global API prefix and URI versioning:
 
-- API Runtime: NestJS 10 on Node.js 20.
-- Database: PostgreSQL 16 (TypeORM).
-- Cache/State: Redis (OTP, refresh token families, Redis sessions, throttling storage).
-- API Docs: Swagger UI at /api.
-- Local Infra Orchestration: Docker Compose (Postgres, pgAdmin, Redis, RedisInsight).
+- Global prefix: /api
+- API version: /v1
 
-## 2. Codebase Topology
+This means controller routes are served under /api/v1.
 
-### 2.1 Core Modules
+Examples:
 
-- auth: Controllers, guards, JWT strategies, auth business logic.
-- user: User entity and user lifecycle services.
-- user-tokens: Persistent verification/reset tokens (DB-backed flow).
-- sessions: Persistent DB sessions keyed by JWT jti.
-- redis-sessions: Session state in Redis for Redis-backed flow.
-- otp: OTP generation/validation with attempt counters in Redis.
-- token: Refresh/access token issuance and family revocation in Redis.
-- integration-services/mail-service: SMTP and Resend email delivery.
-- redis: Global Redis client and helper service.
-- shared: Config, decorators, exception hierarchy, response wrappers, interceptors.
+- Swagger UI: /api
+- Health check: /api/v1/health
+- Auth login (DB flow): /api/v1/auth/login
 
-### 2.2 Request Lifecycle
+## Auth Endpoints
 
-1. Request hits versioned route prefix /v1.
-2. Global throttler checks limits (stored in Redis).
-3. Route-level guards validate access or refresh token.
-4. Business service executes with Postgres and/or Redis.
-5. Global response interceptor wraps non-standard responses.
-6. Global exception filter maps errors to consistent JSON format.
+### DB-backed flow
 
-## 3. Authentication Flows
+- POST /api/v1/auth/register
+- POST /api/v1/auth/login
+- POST /api/v1/auth/verify
+- POST /api/v1/auth/resend-verification
+- POST /api/v1/auth/forgot-password
+- POST /api/v1/auth/reset-password
+- POST /api/v1/auth/refresh-token
+- POST /api/v1/auth/logout
+- POST /api/v1/auth/logout-all
 
-### 3.1 Standard DB-Backed Flow
+### Redis-backed flow
 
-- register: Creates user, stores verification token and OTP in Postgres, sends email.
-- login: Validates credentials, issues JWT pair, stores session in Postgres by jti.
-- verify: Validates token/OTP from verification_tokens and activates account.
-- forgot/reset password: Uses Postgres-stored token/OTP and revokes existing sessions.
-- refresh-token: Verifies refresh token, rotates jti session, re-issues pair.
-- logout/logout-all: Revokes one or all DB sessions.
+- POST /api/v1/auth/redis/register
+- POST /api/v1/auth/redis/login
+- POST /api/v1/auth/redis/verify
+- POST /api/v1/auth/redis/resend-otp
+- POST /api/v1/auth/redis/forgot-password
+- POST /api/v1/auth/redis/reset-password
+- POST /api/v1/auth/redis/refresh-token
+- POST /api/v1/auth/redis/logout
+- POST /api/v1/auth/redis/logout-all
 
-### 3.2 Redis-Backed Flow
+## Health Endpoints
 
-- register-redis: Creates user, generates OTP + verify token in Redis.
-- login-redis: Creates Redis session, issues family-scoped refresh token.
-- verify-redis: Validates OTP from Redis and activates account.
-- forgot/reset-password-redis: Uses Redis OTP and updates password.
-- refresh-token-redis: Verifies family record, rotates pair, revokes family/session.
-- logout-redis/logout-all-redis: Revokes session(s) and token family/families.
+- GET /api/v1/health
+- GET /api/v1/health/live
+- GET /api/v1/health/ready
 
-## 4. API Surface
-
-### 4.1 Base URLs
-
-- API (local): http://localhost:3010
-- Versioned routes: /v1/\*
-- Swagger: /api
-
-### 4.2 Auth Endpoints
-
-Redis-backed:
-
-- POST /v1/auth/register-redis
-- POST /v1/auth/login-redis
-- POST /v1/auth/verify-redis
-- POST /v1/auth/resend-otp-redis
-- POST /v1/auth/forgot-password-redis
-- POST /v1/auth/reset-password-redis
-- POST /v1/auth/refresh-token-redis
-- POST /v1/auth/logout-redis
-- POST /v1/auth/logout-all-redis
-
-DB-backed:
-
-- POST /v1/auth/register
-- POST /v1/auth/login
-- POST /v1/auth/verify
-- POST /v1/auth/resend-verification
-- POST /v1/auth/forgot-password
-- POST /v1/auth/reset-password
-- POST /v1/auth/refresh-token
-- POST /v1/auth/logout
-- POST /v1/auth/logout-all
-
-## 5. Data and State Design
-
-### 5.1 PostgreSQL Entities
-
-- users
-  - Identity and account status.
-  - Password stored as hash.
-  - Activation/password change/login timestamps.
-
-- verification_tokens
-  - OTP + token records for EMAIL_VERIFICATION and PASSWORD_RESET.
-  - Used/expiry metadata.
-
-- sessions
-  - Active device sessions keyed by JWT jti.
-  - Device and IP metadata.
-
-### 5.2 Redis Keyspace
-
-- otp:register:{email}
-- otp:reset:{email}
-- verify:email:token:{token}
-- session:{sessionId}
-- sessions:{userId}
-- refresh-token:{userId}:{family}
-- token-families:{userId}
-- rate:otp:{identifier}
+## Redis Keys and TTLs
 
 Default TTLs:
 
-- OTP: 10 minutes.
-- Email verification token: 10 minutes.
-- Session: 7 days.
-- Refresh token record: 7 days.
+- OTP: 10 minutes
+- Email verification: 10 minutes
+- Session: 7 days
+- Refresh token record: 7 days
+- OTP rate limiter: 1 hour
 
-## 6. Security and Platform Controls
+## Environment Variables
 
-### 6.1 JWT and Session Controls
+Create a .env file in the project root.
 
-- Access and refresh tokens use separate secrets.
-- Refresh endpoints validate token signatures and session state.
-- Session revoke-on-expiry behavior for stale refresh tokens.
-- Logout-all support in both storage modes.
+Required app settings:
+check .env.example
 
-### 6.2 Request Throttling
+## Local Development
 
-Global throttler profiles:
+### 1) Install dependencies
 
-- short: 3 requests / 5s
-- medium: 10 requests / 30s
-- long: 20 requests / 60s
+npm install
 
-Throttler state is persisted in Redis.
+### 2) Start infrastructure
 
-## 8. Local Development
-
-### 8.1 Prerequisites
-
-- Node.js 20+
-- npm 10+
-- Docker and Docker Compose
-
-### 8.2 Start Infrastructure Dependencies
-
-````bash
 docker compose up -d
 
-### 8.3 Install and Run API
+This starts:
 
-```bash
-npm install
+- PostgreSQL on 5432
+- pgAdmin on 8080
+- Redis on 6379
+- RedisInsight on 5540
+
+### 3) Run the API
+
 npm run start:dev
-````
 
-### 8.4 Swagger and Health Check
+By default, the app process inside Docker Compose maps container port 3010 to host port 3011.
 
-- Swagger UI: http://localhost:3010/api
-- Sample app endpoint: GET /v1/
+### 4) Swagger
 
-<!-- ## 11. Production Hardening Checklist -->
-<!-- - Add structured logging and request correlation IDs.
-- Ensure SMTP/Resend failover and delivery observability.
-- Add CI pipeline gates for lint, test, and security scans. -->
+Open:
+
+http://localhost:3010/api (or your configured PORT)
+
+## Useful NPM Scripts
+
+- npm run start
+- npm run start:dev
+- npm run start:prod
+- npm run build
+- npm run lint
+- npm run migration:generate
+- npm run migration:create
+- npm run migration:run
+- npm run migration:revert
+
+## Notes
+
+- Throttling is enabled globally with Redis storage using three windows:
+  - short: 3 requests / 5s
+  - medium: 10 requests / 30s
+  - long: 20 requests / 60s
+- Responses are wrapped in a standard success envelope unless a handler already returns a full response shape.
+- Exceptions are normalized by a global exception filter.
+- docker-compose.prod.yml currently references Dockerfile.prod, but this repository contains Dockerfile and Dockerfile.dev.

@@ -5,7 +5,7 @@ import {
   ResourceNotFoundException,
 } from 'src/shared/exceptions/domain.exceptions';
 import { hashPassword } from 'src/shared/utils/index.utils';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CreateUserDto, LoginDto, UpdatePasswordDto } from './dto/user.dto';
 import { User } from './entity/user.entity';
 
@@ -15,18 +15,19 @@ export class UsersService {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
   ) {}
-  async createUser(input: CreateUserDto) {
-    const { email, password } = input;
-    const userExists = await this.usersRepository.findOneBy({ email });
-    if (userExists) throw new DuplicateResourceException('User', email);
 
-    const hashedPassword = await hashPassword(password);
-    const user = this.usersRepository.create({
-      ...input,
-      password: hashedPassword,
-    });
-    await this.usersRepository.save(user);
-    return user;
+  async createUser(
+    input: CreateUserDto,
+    manager?: EntityManager,
+  ): Promise<User> {
+    const repo = manager ? manager.getRepository(User) : this.usersRepository;
+
+    const userExists = await repo.findOneBy({ email: input.email });
+    if (userExists) throw new DuplicateResourceException('User', input.email);
+
+    const hashedPassword = await hashPassword(input.password);
+    const user = repo.create({ ...input, password: hashedPassword });
+    return repo.save(user);
   }
 
   async findUserWithPassword(email: string) {
