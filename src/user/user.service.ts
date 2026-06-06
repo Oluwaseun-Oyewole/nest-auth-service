@@ -37,6 +37,7 @@ export class UsersService {
       .where('user.email = :email', { email })
       .getOne();
   }
+
   async findUserByEmail(email: string) {
     return await this.usersRepository.findOneBy({ email });
   }
@@ -79,14 +80,15 @@ export class UsersService {
   }
 
   async updateLoginTimestamp(userId: string) {
-    const user = await this.usersRepository.findOneBy({ id: userId });
-    if (!user) throw new ResourceNotFoundException('User', userId);
-
-    await this.usersRepository.update(
-      { id: userId },
-      {
-        lastLoginDate: new Date(),
-      },
-    );
+    await this.usersRepository
+      .query(`UPDATE "users" SET "last_login_date" = NOW() WHERE id = $1`, [
+        userId,
+      ])
+      .catch((error) => {
+        console.error(
+          `Failed to update last login timestamp for user ${userId}:`,
+          error,
+        );
+      });
   }
 }

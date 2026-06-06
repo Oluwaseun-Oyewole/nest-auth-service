@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { JWTPayload } from '../auth.interface';
 
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(
@@ -18,13 +17,10 @@ export class RefreshTokenStrategy extends PassportStrategy(
     });
   }
 
-  async validate(
-    req: Request,
-    payload: JWTPayload & { jti: string },
-  ): Promise<JWTPayload> {
+  async validate(req: Request, payload: Record<string, unknown>) {
     const refreshToken = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
     if (!refreshToken) {
-      throw new Error('Refresh token not found in request');
+      throw new UnauthorizedException('Refresh token not found in request');
     }
     return { ...payload };
   }

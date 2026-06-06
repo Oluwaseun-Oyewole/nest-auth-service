@@ -18,7 +18,7 @@ export class RedisSessionsService {
   async createSession(
     userId: string,
     meta: { ip?: string; userAgent?: string },
-  ): Promise<SessionData> {
+  ) {
     const sessionId = uuidv4();
     const now = new Date().toISOString();
 
@@ -40,19 +40,19 @@ export class RedisSessionsService {
 
     return sessionData;
   }
-  async getSession(sessionId: string): Promise<SessionData | null> {
+  async getSession(sessionId: string) {
     const key = REDIS_KEYS.SESSION(sessionId);
     return this.redisService.get<SessionData>(key);
   }
 
-  async revoke(sessionId: string, userId: string): Promise<void> {
+  async revoke(sessionId: string, userId: string) {
     await Promise.all([
-      this.redisService.del(REDIS_KEYS.SESSION(sessionId)),
       this.redisService.srem(REDIS_KEYS.USER_SESSIONS(userId), sessionId),
+      this.redisService.del(REDIS_KEYS.SESSION(sessionId)),
     ]);
   }
 
-  async revokeAllSessions(userId: string): Promise<void> {
+  async revokeAllSessions(userId: string) {
     const sessionIds = await this.redisService.smembers(
       REDIS_KEYS.USER_SESSIONS(userId),
     );

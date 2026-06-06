@@ -6,7 +6,7 @@ import { Request } from 'express';
 import { MailServiceService } from 'src/integration-services/mail-service/mail-service.service';
 import { OtpService } from 'src/redis-otp/otp.service';
 import { RedisSessionsService } from 'src/redis-sessions/redis-sessions.service';
-import { TokenService } from 'src/redis-token/token.service';
+import { TokenPayload, TokenService } from 'src/redis-token/token.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -36,20 +36,11 @@ export class AuthWithRedisService {
   ) {}
 
   async register(data: CreateUserDto) {
-    const { otp, verifyToken } = await this.otpService.generateRegistrationOtp(
+    const { verifyToken } = await this.otpService.generateRegistrationOtp(
       data.email,
     );
     await this.userService.createUser({ ...data });
-    const verificationLink = `${this.configService.get<string>('APP_URL')}/verify/?otp=${otp}&token=${verifyToken}`;
-
-    await this.mailService.sendVerificationEmail({
-      to: data.email,
-      name: data.fullname,
-      email: data.email,
-      otp,
-      verificationLink,
-    });
-
+    await this.sendEmailVerificationLink(data.email, data.fullname);
     return {
       token: verifyToken,
       email: data.email,
@@ -78,8 +69,10 @@ export class AuthWithRedisService {
       userAgent: request.headers['user-agent'],
     });
 
-    const { accessToken, refreshToken } =
-      await this.tokenService.issueTokenPair(user.id, session.sessionId);
+    const { accessToken, refreshToken } = await this.tokenService.issueToken(
+      user.id,
+      session.sessionId,
+    );
 
     return { accessToken, refreshToken, user };
   }
@@ -106,15 +99,11 @@ export class AuthWithRedisService {
     const { otp, verifyToken } = await this.otpService.generateResetOtp(
       input.email,
     );
-    const resetLink = `${this.configService.get<string>('APP_URL')}/reset-password/?otp=${otp}&token=${verifyToken}`;
-
-    await this.mailService.sendPasswordResetEmail({
-      to: input.email,
-      name: user.fullname,
-      email: input.email,
-      otp,
-      verificationLink: resetLink,
-    });
+    await this.sendEmailVerificationLink(
+      input.email,
+      user.fullname,
+      `${this.configService.get<string>('APP_URL')}/reset-password/?otp=${otp}&token=${verifyToken}`,
+    );
   }
 
   async resetPassword(input: ResetPasswordWithRedisDto) {
@@ -142,19 +131,7 @@ export class AuthWithRedisService {
 
     if (user.activatedAt)
       throw new ForbiddenException('User is already activated');
-
-    const { otp, verifyToken } = await this.otpService.generateRegistrationOtp(
-      input.email,
-    );
-    const verificationLink = `${this.configService.get<string>('APP_URL')}/verify/?otp=${otp}&token=${verifyToken}`;
-
-    await this.mailService.sendVerificationEmail({
-      to: input.email,
-      name: user.fullname,
-      email: input.email,
-      otp,
-      verificationLink,
-    });
+    await this.sendEmailVerificationLink(input.email, user.fullname);
   }
 
   async logout(userId: string, sessionId: string, family: string) {
@@ -172,8 +149,8 @@ export class AuthWithRedisService {
     ]);
   }
 
-  async refreshTokens(refreshToken: string, family: string) {
-    let decoded: { sub: string; jti: string; sessionId: string };
+  async refreshTokens(refreshToken: string) {
+    let decoded: TokenPayload;
 
     try {
       decoded = await this.jwtService.verifyAsync(refreshToken, {
@@ -181,13 +158,13 @@ export class AuthWithRedisService {
       });
     } catch (err) {
       if (err instanceof TokenExpiredError) {
-        const decoded = this.jwtService.decode(refreshToken) as {
-          sub: string;
-          jti: string;
-          sessionId: string;
-        };
-        if (!decoded?.jti) throw new BadRequestException('Malformed token');
-        await this.redisSessionsService.revoke(decoded.sessionId, decoded.sub);
+        const decoded = this.jwtService.decode(refreshToken) as TokenPayload;
+        if (!decoded?.sub || !decoded?.sessionId || !decoded?.family)
+          throw new BadRequestException('Malformed token');
+        await Promise.all([
+          this.redisSessionsService.revoke(decoded.sessionId, decoded.sub),
+          this.tokenService.revokeTokenFamily(decoded.sub, decoded.family),
+        ]);
         throw new ForbiddenException('Refresh token has expired');
       }
       throw new ForbiddenException('Invalid refresh token');
@@ -196,11 +173,19 @@ export class AuthWithRedisService {
     const verifyRecord = await this.tokenService.verifyRefreshToken(
       decoded.sub,
       refreshToken,
-      family,
+      decoded.family,
     );
 
-    if (!verifyRecord) {
-      await this.redisSessionsService.revoke(decoded.sessionId, decoded.sub);
+    if (verifyRecord !== 'valid') {
+      await Promise.all([
+        this.redisSessionsService.revoke(decoded.sessionId, decoded.sub),
+        this.tokenService.revokeTokenFamily(decoded.sub, decoded.family),
+      ]);
+
+      if (verifyRecord === 'mismatch') {
+        throw new ForbiddenException('Refresh token reuse detected');
+      }
+
       throw new ForbiddenException('Refresh token revoked');
     }
 
@@ -210,24 +195,30 @@ export class AuthWithRedisService {
 
     if (!currentSession) throw new ForbiddenException('Session not found');
 
-    const accessAndRefreshTokens = await this.tokenService.issueTokenPair(
+    const accessAndRefreshTokens = await this.tokenService.issueToken(
       decoded.sub,
       decoded.sessionId,
-    );
-
-    await this.redisSessionsService.createSession(decoded.sub, {
-      ip: currentSession.ip,
-      userAgent: currentSession.userAgent,
-    });
-
-    await this.tokenService.revokeFamilyAndSession(
-      decoded.sub,
-      decoded.sessionId,
-      family,
+      decoded.family,
     );
 
     return {
       ...accessAndRefreshTokens,
     };
+  }
+
+  async sendEmailVerificationLink(email: string, name: string, link?: string) {
+    const { otp, verifyToken } =
+      await this.otpService.generateRegistrationOtp(email);
+    const verificationLink =
+      link ||
+      `${this.configService.get<string>('APP_URL')}/verify/?otp=${otp}&token=${verifyToken}`;
+
+    await this.mailService.sendVerificationEmail({
+      to: email,
+      name,
+      email,
+      otp,
+      verificationLink,
+    });
   }
 }

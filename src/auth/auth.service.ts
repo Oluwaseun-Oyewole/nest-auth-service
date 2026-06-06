@@ -48,7 +48,6 @@ export class AuthService {
   async register(data: CreateUserDto) {
     const emailVerificationToken = generateToken();
     const otp = generateOtp();
-    const verificationLink = `${this.configService.get<string>('APP_URL')}/verify/?otp=${otp}&token=${emailVerificationToken}`;
 
     const result = await this.dataSource.transaction(async (manager) => {
       const user = await this.userService.createUser({ ...data }, manager);
@@ -66,39 +65,31 @@ export class AuthService {
       return { token: emailVerificationToken, email: data.email };
     });
 
-    await this.mailService.sendVerificationEmailWithResend({
-      to: data.email,
-      name: data.fullname,
-      email: data.email,
-      otp,
-      verificationLink,
-    });
+    await this.sendEmailVerificationLink(data.email, data.fullname);
 
     return result;
   }
 
   async login(data: LoginDto, request: Request) {
-    this.authLogger.loginAttempt(data.email);
     const user = await this.userService.findUserWithPassword(data.email);
     if (!user) throw new ResourceNotFoundException('User', data.email);
 
-    if (!user.activatedAt)
+    if (!user.activatedAt) {
+      await this.sendEmailVerificationLink(user.email, user.fullname);
       throw new ForbiddenException(
-        'Your account is not activated. Please check your email for the activation details',
+        'Your account is not activated. A new verification email has been sent to your inbox.',
         'ACTIVATION_REQUIRED',
       );
+    }
 
     const isPasswordValid = await argon2.verify(user.password, data.password);
     if (!isPasswordValid) throw new InvalidCredentialsException();
 
-    const accessAndRefreshTokens = await this.generateTokens({
+    const { accessToken, refreshToken } = await this.generateTokens({
       id: user.id,
     });
 
-    const decode = await this.jwtService.decode(
-      accessAndRefreshTokens.accessToken,
-    );
-    await this.userService.updateLoginTimestamp(user.id);
+    const decode = await this.jwtService.decode(accessToken);
 
     user.password = undefined;
 
@@ -108,10 +99,8 @@ export class AuthService {
       deviceInfo: request.headers['user-agent'],
       ipAddress: requestIp.getClientIp(request),
     });
-
-    this.authLogger.loginSuccess(data.email);
-    this.authLogger.tokenIssued(data.email);
-    return { ...accessAndRefreshTokens, user };
+    await this.userService.updateLoginTimestamp(user.id);
+    return { accessToken, refreshToken, user };
   }
 
   async verify(input: VerifyOtpDto) {
@@ -143,8 +132,10 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.userService.findUserByEmail(email);
     if (!user) throw new ResourceNotFoundException('User', email);
-    if (!user.activatedAt)
+    if (!user.activatedAt) {
+      await this.sendEmailVerificationLink(email, user.fullname);
       throw new ForbiddenException('User account is not activated');
+    }
 
     const resetToken = generateToken();
     const otp = generateOtp();
@@ -209,7 +200,6 @@ export class AuthService {
 
     const emailVerificationToken = generateToken();
     const otp = generateOtp();
-    const verificationLink = `${this.configService.get<string>('APP_URL')}/verify/?otp=${otp}&token=${emailVerificationToken}`;
 
     await this.userTokensService.createVerificationToken({
       userId: user.id,
@@ -219,13 +209,7 @@ export class AuthService {
       type: TOKEN_TYPES.EMAIL_VERIFICATION,
     });
 
-    await this.mailService.sendVerificationEmail({
-      to: input.email,
-      name: user.fullname,
-      email: input.email,
-      otp,
-      verificationLink,
-    });
+    await this.sendEmailVerificationLink(user.email, user.fullname);
   }
 
   async logout(jti: string) {
@@ -307,5 +291,19 @@ export class AuthService {
       ),
     ]);
     return { accessToken, refreshToken };
+  }
+
+  private async sendEmailVerificationLink(email: string, fullname: string) {
+    const emailVerificationToken = generateToken();
+    const otp = generateOtp();
+    const verificationLink = `${this.configService.get<string>('APP_URL')}/verify/?otp=${otp}&token=${emailVerificationToken}`;
+
+    await this.mailService.sendVerificationEmailWithResend({
+      to: email,
+      name: fullname,
+      email,
+      otp,
+      verificationLink,
+    });
   }
 }

@@ -1,6 +1,7 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
+import { TokenPayload } from 'src/redis-token/token.service';
 import { Public } from 'src/shared/decorators/public-request.decorator';
 import { GetToken } from 'src/shared/decorators/token.decorator';
 import { CurrentUser } from 'src/shared/decorators/user.decorator';
@@ -74,9 +75,7 @@ export class RedisAuthController {
   }
 
   @Post('logout')
-  async logoutWithRedis(
-    @CurrentUser() user: { sub: string; sessionId: string; family: string },
-  ) {
+  async logoutWithRedis(@CurrentUser() user: TokenPayload) {
     await this.authWithRedisService.logout(
       user.sub,
       user.sessionId,
@@ -96,12 +95,9 @@ export class RedisAuthController {
 
   @Post('refresh-token')
   @UseGuards(JWTRefreshTokenGuard)
-  async refreshTokensWithRedis(
-    @GetToken() refreshToken: string,
-    @CurrentUser() user: { family: string },
-  ) {
+  async refreshTokensWithRedis(@GetToken() refreshToken: string) {
     const accessAndRefreshTokens =
-      await this.authWithRedisService.refreshTokens(refreshToken, user.family);
+      await this.authWithRedisService.refreshTokens(refreshToken);
     return ResponseBuilder.success(
       accessAndRefreshTokens,
       'Tokens refreshed successfully.',
