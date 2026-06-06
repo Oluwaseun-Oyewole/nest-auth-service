@@ -16,7 +16,6 @@ export class HealthController {
     private readonly db: TypeOrmHealthIndicator,
     private readonly memoryHealthIndicator: MemoryHealthIndicator,
     private readonly diskHealthIndicator: DiskHealthIndicator,
-    // private readonly authLogger: AuthLogger,
   ) {}
 
   @HealthCheck()

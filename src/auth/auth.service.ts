@@ -28,7 +28,6 @@ import {
 } from 'src/user/dto/user.dto';
 import { UsersService } from 'src/user/user.service';
 import { DataSource } from 'typeorm';
-import { AuthLogger } from './../logger/logger.service';
 import { ResendVerificationEmailDto } from './../user/dto/user.dto';
 import { JWTPayload } from './auth.interface';
 
@@ -41,7 +40,6 @@ export class AuthService {
     private readonly userTokensService: UserTokensService,
     private readonly configService: ConfigService,
     private readonly sessionsService: SessionsService,
-    private readonly authLogger: AuthLogger,
     private readonly dataSource: DataSource,
   ) {}
 

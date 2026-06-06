@@ -14,7 +14,6 @@ import {
 import * as compression from 'compression';
 import { AuthLogger } from './logger/logger.service';
 import { GlobalExceptionFilter } from './shared/exceptions/global.exceptions';
-import { LoggingInterceptor } from './shared/interceptors/log.interceptors';
 import { TransformResponseInterceptor } from './shared/interceptors/transform-response.interceptors';
 
 export async function appCreate(app: INestApplication) {
@@ -89,7 +88,7 @@ export async function appCreate(app: INestApplication) {
   });
 
   app.useLogger(new AuthLogger());
-  app.useGlobalInterceptors(new LoggingInterceptor(new AuthLogger()));
+  // app.useGlobalInterceptors(new LoggingInterceptor(new AuthLogger()));
 
   SwaggerModule.setup('api', app, document, customOptions);
   app.enableCors({
