@@ -36,15 +36,8 @@ export class AuthWithRedisService {
   ) {}
 
   async register(data: CreateUserDto) {
-    const { verifyToken } = await this.otpService.generateRegistrationOtp(
-      data.email,
-    );
     await this.userService.createUser({ ...data });
     await this.sendEmailVerificationLink(data.email, data.fullname);
-    return {
-      token: verifyToken,
-      email: data.email,
-    };
   }
 
   async login(data: LoginDto, request: Request) {
@@ -99,11 +92,14 @@ export class AuthWithRedisService {
     const { otp, verifyToken } = await this.otpService.generateResetOtp(
       input.email,
     );
-    await this.sendEmailVerificationLink(
-      input.email,
-      user.fullname,
-      `${this.configService.get<string>('APP_URL')}/reset-password/?otp=${otp}&token=${verifyToken}`,
-    );
+
+    await this.mailService.sendVerificationEmail({
+      to: input.email,
+      name: user.fullname,
+      email: input.email,
+      otp,
+      verificationLink: `${this.configService.get<string>('APP_URL')}/reset-password/?otp=${otp}&token=${verifyToken}`,
+    });
   }
 
   async resetPassword(input: ResetPasswordWithRedisDto) {
@@ -220,5 +216,10 @@ export class AuthWithRedisService {
       otp,
       verificationLink,
     });
+
+    return {
+      token: verifyToken,
+      email,
+    };
   }
 }
