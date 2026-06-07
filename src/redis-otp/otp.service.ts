@@ -20,7 +20,8 @@ export class OtpService {
 
   async generateOtp_(
     key: string,
-  ): Promise<{ otp: string; verifyToken: string }> {
+    type: 'registration' | 'reset' = 'registration',
+  ) {
     const code = generateOtp();
     const verifyToken = uuidv4();
 
@@ -28,34 +29,21 @@ export class OtpService {
       code,
       attempts: 0,
       createdAt: Date.now(),
-      verifyToken,
+      verifyToken: type === 'registration' ? verifyToken : undefined,
     };
 
-    await Promise.all([
-      this.redisService.set(key, otpPayload, REDIS_TTL.OTP),
-
-      this.redisService.set(
-        REDIS_KEYS.VERIFY_EMAIL_TOKEN(verifyToken),
-        verifyToken,
-        REDIS_TTL.OTP,
-      ),
-    ]);
+    await Promise.all([this.redisService.set(key, otpPayload, REDIS_TTL.OTP)]);
     return { otp: code, verifyToken };
   }
 
-  async verifyOtp(key: string, otp: string): Promise<void> {
+  async verifyOtp(key: string, otp: string) {
     const storedOtp = await this.redisService.get<OtpPayload>(key);
 
     if (!storedOtp)
       throw new BadRequestException('OTP expired or does not exist');
 
     if (storedOtp.attempts >= MAX_OTP_ATTEMPTS) {
-      await Promise.all([
-        this.redisService.del(key),
-        this.redisService.del(
-          REDIS_KEYS.VERIFY_EMAIL_TOKEN(storedOtp.verifyToken),
-        ),
-      ]);
+      await Promise.all([this.redisService.del(key)]);
       throw new BadRequestException('Too many attempts. Request a new OTP.');
     }
 
@@ -69,27 +57,20 @@ export class OtpService {
     }
 
     await this.redisService.del(key);
-    await this.redisService.del(
-      REDIS_KEYS.VERIFY_EMAIL_TOKEN(storedOtp.verifyToken),
-    );
   }
 
-  async generateRegistrationOtp(
-    email: string,
-  ): Promise<{ otp: string; verifyToken: string }> {
-    return this.generateOtp_(REDIS_KEYS.OTP_REGISTER(email));
+  async generateRegistrationOtp(email: string) {
+    return this.generateOtp_(REDIS_KEYS.OTP_REGISTER(email), 'registration');
   }
-  async generateResetOtp(
-    email: string,
-  ): Promise<{ otp: string; verifyToken: string }> {
-    return this.generateOtp_(REDIS_KEYS.OTP_RESET(email));
+  async generateResetOtp(email: string) {
+    return this.generateOtp_(REDIS_KEYS.OTP_RESET(email), 'reset');
   }
 
-  async verifyRegistrationOtp(email: string, otp: string): Promise<void> {
+  async verifyRegistrationOtp(email: string, otp: string) {
     return this.verifyOtp(REDIS_KEYS.OTP_REGISTER(email), otp);
   }
 
-  async verifyResetOtp(email: string, otp: string): Promise<void> {
+  async verifyResetOtp(email: string, otp: string) {
     return this.verifyOtp(REDIS_KEYS.OTP_RESET(email), otp);
   }
 }

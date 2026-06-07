@@ -37,7 +37,7 @@ export class AuthWithRedisService {
 
   async register(data: CreateUserDto) {
     await this.userService.createUser({ ...data });
-    await this.sendEmailVerificationLink(data.email, data.fullname);
+    return await this.sendEmailVerificationLink(data.email, data.fullname);
   }
 
   async login(data: LoginDto, request: Request) {
