@@ -155,8 +155,9 @@ export class AuthWithRedisService {
     } catch (err) {
       if (err instanceof TokenExpiredError) {
         const decoded = this.jwtService.decode(refreshToken) as TokenPayload;
-        if (!decoded?.sub || !decoded?.sessionId || !decoded?.family)
+        if (!decoded?.sub || !decoded?.sessionId || !decoded?.family) {
           throw new BadRequestException('Malformed token');
+        }
         await Promise.all([
           this.redisSessionsService.revoke(decoded.sessionId, decoded.sub),
           this.tokenService.revokeTokenFamily(decoded.sub, decoded.family),
@@ -181,7 +182,6 @@ export class AuthWithRedisService {
       if (verifyRecord === 'mismatch') {
         throw new ForbiddenException('Refresh token reuse detected');
       }
-
       throw new ForbiddenException('Refresh token revoked');
     }
 

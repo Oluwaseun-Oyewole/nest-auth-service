@@ -13,5 +13,4 @@ export const REDIS_TTL = {
   OTP: 60 * 10,
   SESSION: 60 * 60 * 24 * 7,
   REFRESH_TOKEN: 60 * 60 * 24 * 7,
-  EMAIL_VERIFICATION: 60 * 10,
 } as const;
