@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -x ### debug mode 
+
+ssh -i /Users/mac/downloads/learning-vpc-ec2-instance.pem ubuntu@ip

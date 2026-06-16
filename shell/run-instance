@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+# Checks running EC2 instances, verifies health, stops unhealthy ones,
+# and starts any instances tagged for auto-start.
+
+set -euo pipefail
+
+REGION="us-east-1"          # change to your region
+LOG_FILE="./shell/logs/run_instance.log"
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
+
+# --- SECTION 1: Health check on running instances ---
+log "Fetching running instances..."
+RUNNING_INSTANCES=$(aws ec2 describe-instances \
+    --region "$REGION" \
+    --filters "Name=instance-state-name,Values=running" \
+    --query "Reservations[].Instances[].[InstanceId,Tags[?Key=='Name']|[0].Value]" \
+    --output text)
+
+if [ -z "$RUNNING_INSTANCES" ]; then
+    log "No running instances found. Skipping health checks."
+else
+    while read -r INSTANCE_ID NAME; do
+        [ -z "$INSTANCE_ID" ] && continue
+
+        log "Checking instance: $INSTANCE_ID ($NAME)"
+
+        STATUS=$(aws ec2 describe-instance-status \
+            --region "$REGION" \
+            --instance-ids "$INSTANCE_ID" \
+            --query "InstanceStatuses[0].[SystemStatus.Status,InstanceStatus.Status]" \
+            --output text)
+
+        SYSTEM_STATUS=$(echo "$STATUS" | awk '{print $1}')
+        INSTANCE_STATUS=$(echo "$STATUS" | awk '{print $2}')
+
+        log "  System status: $SYSTEM_STATUS | Instance status: $INSTANCE_STATUS"
+
+        if [[ "$SYSTEM_STATUS" == "impaired" || "$INSTANCE_STATUS" == "impaired" ]]; then
+            log "  WARNING: $INSTANCE_ID is impaired. Stopping..."
+            aws ec2 stop-instances --region "$REGION" --instance-ids "$INSTANCE_ID" >/dev/null
+            log "  Stop command sent for $INSTANCE_ID."
+        elif [[ "$SYSTEM_STATUS" == "ok" && "$INSTANCE_STATUS" == "ok" ]]; then
+            log "  $INSTANCE_ID is healthy. No action needed."
+        else
+            log "  $INSTANCE_ID status not yet available. Skipping."
+        fi
+    done <<< "$RUNNING_INSTANCES"
+fi
+
+# --- SECTION 2: Auto-start tagged stopped instances ---
+log "Checking for instances tagged 'AutoStart=true' that are stopped..."
+STOPPED_INSTANCES=$(aws ec2 describe-instances \
+    --region "$REGION" \
+    --filters "Name=instance-state-name,Values=stopped" "Name=tag:AutoStart,Values=true" \
+    --query "Reservations[].Instances[].InstanceId" \
+    --output text)
+
+if [ -z "$STOPPED_INSTANCES" ]; then
+    log "No tagged instances need starting."
+else
+    for ID in $STOPPED_INSTANCES; do
+        log "Starting tagged instance: $ID"
+        aws ec2 start-instances --region "$REGION" --instance-ids "$ID" >/dev/null
+    done
+fi
+
+log "Run complete."

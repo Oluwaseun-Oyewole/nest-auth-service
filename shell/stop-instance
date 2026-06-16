@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# stop-instance.sh
+# stop running EC2 instances that are tagged with "AutoStop=true"
+
+set -euo pipefail
+REGION="us-east-1" 
+LOG_FILE="./shell/logs/stop_instance.log"
+
+BOLD='\033[1m';
+GREEN='\033[0;32m';
+BLUE='\033[0;34m';
+NC='\033[0m'
+
+
+success() { echo -e "${GREEN}[✓]${NC} $*"; }
+section() { echo -e "\n${BOLD}${BLUE}══════════════════════════════════════${NC}"; }
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
+
+section "Checking for instances tagged 'AutoStop=true' that are running..."
+RUNNING_INSTANCES=$(aws ec2 describe-instances \
+    --region "$REGION" \
+    --filters "Name=instance-state-name,Values=running" "Name=tag:AutoStop,Values=true" \
+    --query "Reservations[].Instances[].InstanceId" \
+    --output text)
+
+if [ -z "$RUNNING_INSTANCES" ]; then
+    log "No running instances found with 'AutoStop=true' tag. Exiting."
+    exit 0
+fi
+for INSTANCE_ID in $RUNNING_INSTANCES; do
+    log "Stopping instance: $INSTANCE_ID"
+    aws ec2 stop-instances --region "$REGION" --instance-ids "$INSTANCE_ID" >/dev/null
+    log "Stop command sent for $INSTANCE_ID."
+done
+
+success "All instances with 'AutoStop=true' tag have been stopped."

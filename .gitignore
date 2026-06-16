@@ -57,5 +57,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 
 start.sh
-
-
+shell/bastion
+shell/logs
+shell/logs/aws-ssh
