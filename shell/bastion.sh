@@ -6,7 +6,7 @@ Host bastion
 
 # Private Instance (jump through bastion)
 Host private-server
-  HostName      PRIVATE_IP          # e.g. 10.0.1.50
+  HostName      PRIVATE_IP       
   User          ec2-user
   IdentityFile  ~/.ssh/your-key.pem
   ProxyJump     bastion

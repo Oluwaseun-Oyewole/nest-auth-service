@@ -10,31 +10,35 @@ echo "=== Starting provisioning at $(date) ==="
 apt-get update -y && apt-get upgrade -y
 apt-get install -y curl git unzip awscli jq
 
-# --- Node.js 20 LTS via NVM ---
-export NVM_DIR="/root/.nvm"
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-source "$NVM_DIR/nvm.sh"
-nvm install 20
-nvm use 20
-nvm alias default 20
-
-
-npm install -g pm2 typescript ts-node
-
 # --- Create app user ---
 useradd -m -s /bin/bash appuser
 mkdir -p /var/log/nestapp
 chown appuser:appuser /var/log/nestapp
 
-# --- PM2 startup ---
-pm2 startup systemd -u appuser --hp /home/appuser
+# Allow ubuntu/root to su into appuser without password (it already can as root)
+# If you want appuser to use sudo:
+echo "appuser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/appuser
+chmod 440 /etc/sudoers.d/appuser
+
+# --- Node.js 20 LTS via NVM (installed under appuser) ---
+sudo -u appuser -H bash -c '
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+  export NVM_DIR="$HOME/.nvm"
+  source "$NVM_DIR/nvm.sh"
+  nvm install 20
+  nvm use 20
+  nvm alias default 20
+  npm install -g pm2 typescript ts-node
+'
+
+# --- PM2 startup (runs as root to register systemd service) ---
+env PATH=$PATH:/home/appuser/.nvm/versions/node/v20/bin \
+  pm2 startup systemd -u appuser --hp /home/appuser
 systemctl enable pm2-appuser
 
-# redis
+# --- Redis ---
 apt-get install -y redis-server
 systemctl enable redis-server
 systemctl start redis-server
 
-
 echo "=== Provisioning complete at $(date) ==="
-
