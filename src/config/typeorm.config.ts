@@ -14,7 +14,7 @@ export const databaseConfigOptions: DataSourceOptions = {
   username: configService.get<string>('DB_USER'),
   password: configService.get<string>('DB_PASSWORD'),
   database: configService.get<string>('DB_NAME'),
-
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
   synchronize: !isProduction,
 
   entities: [
@@ -32,7 +32,7 @@ export const databaseConfigOptions: DataSourceOptions = {
   migrationsRun: isProduction,
 
   extra: {
-    ssl: isProduction ? { rejectUnauthorized: false } : false,
+    ssl: isProduction ? { rejectUnauthorized: false } : undefined,
     max: isProduction ? 20 : 5, // max pool size
     min: isProduction ? 5 : 1, // min idle connections
     idleTimeoutMillis: 30_000, // close idle conns after 30s
