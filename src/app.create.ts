@@ -88,7 +88,6 @@ export async function appCreate(app: INestApplication) {
   });
 
   app.useLogger(new AuthLogger());
-  // app.useGlobalInterceptors(new LoggingInterceptor(new AuthLogger()));
 
   SwaggerModule.setup('api', app, document, customOptions);
   app.enableCors({
