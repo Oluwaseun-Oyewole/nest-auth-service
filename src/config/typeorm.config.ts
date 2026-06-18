@@ -15,7 +15,7 @@ export const databaseConfigOptions: DataSourceOptions = {
   password: configService.get<string>('DB_PASSWORD'),
   database: configService.get<string>('DB_NAME'),
   ssl: isProduction ? { rejectUnauthorized: false } : false,
-  synchronize: !isProduction,
+  synchronize: false,
 
   entities: [
     isProduction
@@ -24,9 +24,7 @@ export const databaseConfigOptions: DataSourceOptions = {
   ],
 
   migrations: [
-    isProduction
-      ? 'dist/migrations/migrations/*.js'
-      : `${__dirname}/../migrations/migrations/*{.ts,.js}`,
+    isProduction ? 'dist/migrations/migrations/*.js' : `src/migrations/*.ts`,
   ],
 
   migrationsRun: isProduction,
