@@ -51,6 +51,8 @@ export async function appCreate(app: INestApplication) {
   app.useGlobalInterceptors(new TransformResponseInterceptor());
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
+  app.setGlobalPrefix('api');
+
   const config = new DocumentBuilder()
     .setTitle('Authentication API')
     .setDescription(
@@ -109,7 +111,5 @@ export async function appCreate(app: INestApplication) {
       'User-Agent',
     ],
   });
-
-  app.setGlobalPrefix('api');
   app.use(compression());
 }

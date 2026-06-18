@@ -42,7 +42,7 @@ export class AuthWithRedisService {
 
   async login(data: LoginDto, request: Request) {
     const user = await this.userService.findUserWithPassword(data.email);
-    if (!user) throw new ResourceNotFoundException('User', data.email);
+    if (!user) throw new InvalidCredentialsException();
 
     if (!user.activatedAt) {
       throw new ForbiddenException(
