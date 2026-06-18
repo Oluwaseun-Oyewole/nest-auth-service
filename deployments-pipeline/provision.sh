@@ -11,7 +11,9 @@ apt-get update -y && apt-get upgrade -y
 apt-get install -y curl git unzip awscli jq
 
 # --- Create app user ---
-useradd -m -s /bin/bash appuser
+if ! id -u appuser >/dev/null 2>&1; then
+  useradd -m -s /bin/bash appuser
+fi
 mkdir -p /var/log/nestapp
 chown appuser:appuser /var/log/nestapp
 
