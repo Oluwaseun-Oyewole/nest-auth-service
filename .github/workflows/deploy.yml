@@ -36,5 +36,5 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo bash /home/scripts/provision.sh
-            sudo bash /home/scripts/deploy
+            sudo bash /home/ubuntu/scripts/provision.sh
+            sudo bash /home/ubuntu/scripts/deploy
