@@ -7,7 +7,7 @@ import { ApiProtectedRoute } from './shared/decorators/swagger.decorator';
 
 @UseGuards(JwtAuthGuard)
 @SkipThrottle()
-@ApiTags('App')
+@ApiTags('App (protected endpoints)')
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}

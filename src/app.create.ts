@@ -58,7 +58,8 @@ export async function appCreate(app: INestApplication) {
     )
     .setVersion('1.0.0')
     .addTag('Authentication', 'Authentication and account access endpoints')
-    .addServer(`http://localhost:3010`, 'Local')
+    .addServer(`http://localhost:${configService.get<string>('PORT')}`, 'Local')
+    .addServer(configService.get<string>('PROD_IP'), 'Production')
     .addBearerAuth(
       {
         type: 'http',

@@ -19,7 +19,7 @@ import { RegisterResponseDto } from './dto/auth.dto';
 import { JWTRefreshTokenGuard } from './guards/jwt-refresh.guard';
 
 @ApiTags('Authentication')
-@Controller('auth/redis')
+@Controller('auth')
 export class RedisAuthController {
   constructor(private readonly authWithRedisService: AuthWithRedisService) {}
 

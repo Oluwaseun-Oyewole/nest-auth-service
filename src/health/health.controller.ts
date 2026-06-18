@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import {
   DiskHealthIndicator,
   HealthCheck,
@@ -8,6 +9,7 @@ import {
 } from '@nestjs/terminus';
 import { RedisHealthIndicator } from './indicators/redis.health';
 
+@ApiTags('Health')
 @Controller('health')
 export class HealthController {
   constructor(

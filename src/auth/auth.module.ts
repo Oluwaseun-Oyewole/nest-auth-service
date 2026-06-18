@@ -10,7 +10,6 @@ import { OtpModule } from 'src/redis-otp/otp.module';
 import { RedisSessionsModule } from 'src/redis-sessions/redis-sessions.module';
 import { TokenModule } from 'src/redis-token/token.module';
 import { UserModule } from 'src/user/user.module';
-import { AuthController } from './auth.controller';
 import { RedisAuthController } from './auth.redis.controller';
 import { AuthWithRedisService } from './auth.redis.service';
 import { AuthService } from './auth.service';
@@ -36,7 +35,7 @@ import { AccessJwtStrategy } from './strategies/jwt.strategy';
     TokenModule,
     LoggerModule,
   ],
-  controllers: [AuthController, RedisAuthController],
+  controllers: [RedisAuthController],
   providers: [
     AuthService,
     AuthWithRedisService,
