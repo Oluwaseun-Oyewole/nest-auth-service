@@ -37,7 +37,7 @@ sudo -u "$APP_USER" -H bash -c "
   set -euo pipefail
   $NVM_INIT
   cd $APP_DIR
-  npm run migration:run
+  npm run migration:run:prod
 "
 # --- Reload PM2 (zero-downtime) ---
 sudo -u "$APP_USER" -H bash -c "
