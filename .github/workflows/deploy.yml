@@ -29,6 +29,18 @@ jobs:
     needs: test-and-build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload healthcheck script
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: deployment-pipeline/healthcheck.sh
+          target: /home/ubuntu/scripts
+          strip_components: 1
+
       - name: SSH & Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -38,3 +50,5 @@ jobs:
           script: |
             sudo bash /home/ubuntu/scripts/provision.sh
             sudo bash /home/ubuntu/scripts/deploy
+            sudo chmod +x /home/ubuntu/scripts/healthcheck.sh
+            sudo bash /home/ubuntu/scripts/healthcheck.sh
