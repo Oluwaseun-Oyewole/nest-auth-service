@@ -14,10 +14,18 @@ export const databaseConfigOptions: DataSourceOptions = {
   database: configService.get<string>('DB_NAME'),
   ssl: { rejectUnauthorized: false },
   synchronize: false,
+  entities: ['dist/**/*.entity.js'],
 
-  entities: [`src/../**/*.entity{.ts,.js}`],
-  migrations: ['src/migrations/*.ts'],
+  migrations: ['dist/migrations/*.js'],
+
   migrationsRun: true,
+
+  extra: {
+    max: 20,
+    min: 5,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
+  },
 };
 
 const dataSource = new DataSource(databaseConfigOptions);
